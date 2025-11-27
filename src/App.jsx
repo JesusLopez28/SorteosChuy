@@ -7,7 +7,9 @@ import './App.css';
 const ADMIN_PASSWORD = 'ChuySorteos2804#';
 
 function App() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    return localStorage.getItem('isAuthenticated') === 'true';
+  });
   const [password, setPassword] = useState('');
   const [activeTab, setActiveTab] = useState('exchanges');
   
@@ -53,11 +55,6 @@ function App() {
           createdAt: data.createdAt
         }));
         setExchanges(exchangesData);
-        
-        // Seleccionar el primer intercambio por defecto
-        if (exchangesData.length > 0 && !currentExchangeId) {
-          setCurrentExchangeId(exchangesData[0].id);
-        }
       }
     } catch (error) {
       showMessage('Error al cargar intercambios: ' + error.message, 'error');
@@ -145,6 +142,7 @@ function App() {
     e.preventDefault();
     if (password === ADMIN_PASSWORD) {
       setIsAuthenticated(true);
+      localStorage.setItem('isAuthenticated', 'true');
       setPassword('');
       showMessage('¡Bienvenido, Chuy!', 'success');
     } else {
@@ -259,47 +257,166 @@ function App() {
     }
   };
 
-  // Algoritmo mejorado de sorteo usando Fisher-Yates Shuffle con backtracking
+  // Algoritmo robusto de sorteo con backtracking inteligente y aleatoriedad real
   const generateDrawImproved = () => {
-    const maxAttempts = 10000;
-    
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      // Crear lista de participantes ordenada aleatoriamente
-      const shuffledParticipants = [...participants].sort(() => Math.random() - 0.5);
-      
-      const assignments = {};
-      const used = new Set();
-      let success = true;
-
-      for (let i = 0; i < shuffledParticipants.length; i++) {
-        const giver = shuffledParticipants[i];
-        const excluded = exclusions[giver.id] || [];
-        
-        // Crear lista de receptores válidos
-        const validReceivers = participants.filter(p => 
-          p.id !== giver.id && 
-          !excluded.includes(p.id) && 
-          !used.has(p.id)
-        );
-
-        if (validReceivers.length === 0) {
-          success = false;
-          break;
-        }
-
-        // Selección aleatoria con ponderación para evitar deadlocks
-        const receiver = validReceivers[Math.floor(Math.random() * validReceivers.length)];
-        assignments[giver.id] = receiver.id;
-        used.add(receiver.id);
-      }
-
-      // Verificar que el sorteo es válido (todos asignados)
-      if (success && Object.keys(assignments).length === participants.length) {
-        return assignments;
-      }
+    // Validación previa: verificar que hay solución posible
+    if (!validateSolutionExists()) {
+      return null;
     }
 
+    // Algoritmo de backtracking con aleatorización
+    const givers = [...participants];
+    
+    // Aleatorizar el orden de los givers para añadir imprevisibilidad
+    shuffleArray(givers);
+    
+    const assignments = {};
+    const used = new Set();
+    
+    // Función recursiva de backtracking
+    const backtrack = (index) => {
+      if (index === givers.length) {
+        return true; // Todos asignados exitosamente
+      }
+      
+      const giver = givers[index];
+      const excluded = exclusions[giver.id] || [];
+      
+      // Obtener receptores válidos
+      let validReceivers = participants.filter(p => 
+        p.id !== giver.id && 
+        !excluded.includes(p.id) && 
+        !used.has(p.id)
+      );
+      
+      // Si no hay receptores válidos, retroceder
+      if (validReceivers.length === 0) {
+        return false;
+      }
+      
+      // Aleatorizar el orden de prueba de receptores
+      shuffleArray(validReceivers);
+      
+      // Intentar asignar cada receptor válido
+      for (const receiver of validReceivers) {
+        // Verificar que esta asignación no causa un deadlock futuro
+        if (wouldCauseDeadlock(giver, receiver, index, assignments, used, givers)) {
+          continue;
+        }
+        
+        // Hacer la asignación
+        assignments[giver.id] = receiver.id;
+        used.add(receiver.id);
+        
+        // Intentar completar el resto
+        if (backtrack(index + 1)) {
+          return true;
+        }
+        
+        // Deshacer asignación si no funcionó
+        delete assignments[giver.id];
+        used.delete(receiver.id);
+      }
+      
+      return false; // No se encontró solución en esta rama
+    };
+    
+    // Ejecutar backtracking
+    if (backtrack(0)) {
+      return assignments;
+    }
+    
     return null;
+  };
+
+  // Función auxiliar: Fisher-Yates shuffle para aleatorización real
+  const shuffleArray = (array) => {
+    for (let i = array.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [array[i], array[j]] = [array[j], array[i]];
+    }
+    return array;
+  };
+
+  // Validar que existe al menos una solución posible
+  const validateSolutionExists = () => {
+    // Verificar que cada participante tiene al menos una opción válida
+    for (const giver of participants) {
+      const excluded = exclusions[giver.id] || [];
+      const validReceivers = participants.filter(p => 
+        p.id !== giver.id && 
+        !excluded.includes(p.id)
+      );
+      
+      if (validReceivers.length === 0) {
+        return false;
+      }
+    }
+    
+    // Usar algoritmo de Hall (Marriage Theorem) para grafos bipartitos
+    // Si todos los subconjuntos cumplen la condición de Hall, existe emparejamiento perfecto
+    return checkHallCondition();
+  };
+
+  // Verificar condición de Hall para emparejamiento perfecto
+  const checkHallCondition = () => {
+    // Para cada subconjunto de participantes, verificar que el conjunto
+    // de receptores válidos sea al menos del mismo tamaño
+    const n = participants.length;
+    
+    // Generar todos los subconjuntos no vacíos (2^n - 1)
+    for (let mask = 1; mask < (1 << n); mask++) {
+      const subset = [];
+      const validReceivers = new Set();
+      
+      for (let i = 0; i < n; i++) {
+        if (mask & (1 << i)) {
+          const giver = participants[i];
+          subset.push(giver);
+          
+          // Añadir receptores válidos para este giver
+          const excluded = exclusions[giver.id] || [];
+          participants.forEach(p => {
+            if (p.id !== giver.id && !excluded.includes(p.id)) {
+              validReceivers.add(p.id);
+            }
+          });
+        }
+      }
+      
+      // Verificar condición de Hall: |N(S)| >= |S|
+      if (validReceivers.size < subset.length) {
+        return false;
+      }
+    }
+    
+    return true;
+  };
+
+  // Verificar si una asignación causaría un deadlock en pasos futuros
+  const wouldCauseDeadlock = (giver, receiver, currentIndex, assignments, used, givers) => {
+    // Simular la asignación temporalmente
+    const tempAssignments = { ...assignments, [giver.id]: receiver.id };
+    const tempUsed = new Set([...used, receiver.id]);
+    
+    // Verificar que los participantes restantes tengan opciones
+    for (let i = currentIndex + 1; i < givers.length; i++) {
+      const futureGiver = givers[i];
+      const excluded = exclusions[futureGiver.id] || [];
+      
+      const availableReceivers = participants.filter(p => 
+        p.id !== futureGiver.id && 
+        !excluded.includes(p.id) && 
+        !tempUsed.has(p.id)
+      );
+      
+      // Si algún participante futuro se queda sin opciones, hay deadlock
+      if (availableReceivers.length === 0) {
+        return true;
+      }
+    }
+    
+    return false;
   };
 
   const clearResults = async () => {
@@ -649,7 +766,10 @@ function App() {
               <button onClick={clearAllData} className="btn btn-danger">
                 🗑️ Eliminar Todos los Intercambios
               </button>
-              <button onClick={() => setIsAuthenticated(false)} className="btn btn-secondary">
+              <button onClick={() => {
+                setIsAuthenticated(false);
+                localStorage.removeItem('isAuthenticated');
+              }} className="btn btn-secondary">
                 🚪 Cerrar Sesión
               </button>
             </div>
