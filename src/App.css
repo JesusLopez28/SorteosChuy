@@ -533,6 +533,96 @@ body::before {
   border-color: #DAA520;
 }
 
+.message-warning {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFE4B5 100%);
+  color: #8B4513;
+  border-color: #FF8C00;
+}
+
+/* Exchanges Section */
+.exchanges-section {
+  margin-bottom: 30px;
+  padding: 20px;
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFFFFF 100%);
+  border: 3px solid #DAA520;
+  border-radius: 15px;
+  box-shadow: 0 5px 15px rgba(218, 165, 32, 0.3);
+}
+
+.exchanges-section h2 {
+  color: #8B0000;
+  margin-bottom: 20px;
+  text-shadow: 2px 2px 4px rgba(218, 165, 32, 0.3);
+  font-size: 1.8rem;
+}
+
+.exchanges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.exchange-card {
+  padding: 20px;
+  border: 3px solid #DAA520;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #FFF8DC 100%);
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 3px 10px rgba(218, 165, 32, 0.2);
+  position: relative;
+  text-align: center;
+}
+
+.exchange-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(218, 165, 32, 0.4);
+  border-color: #C41E3A;
+}
+
+.exchange-card.active {
+  background: linear-gradient(135deg, #FFFACD 0%, #FFD700 100%);
+  border-color: #C41E3A;
+  box-shadow: 0 6px 20px rgba(196, 30, 58, 0.5);
+}
+
+.exchange-card.active::before {
+  content: "⭐";
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  font-size: 1.5rem;
+  animation: twinkle 1.5s ease-in-out infinite;
+}
+
+.exchange-card h3 {
+  color: #8B0000;
+  margin-bottom: 8px;
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.btn-sm {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+.checkbox-label.disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.checkbox-label.disabled:hover {
+  background: rgba(255, 255, 255, 0.5);
+  border-color: transparent;
+  transform: translateX(0);
+}
+
+.checkbox-label.disabled input[type="checkbox"] {
+  cursor: not-allowed;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header h1 {
@@ -557,4 +647,9 @@ body::before {
     padding: 12px 20px;
     white-space: nowrap;
   }
+  
+  .exchanges-grid {
+    grid-template-columns: 1fr;
+  }
 }
+
