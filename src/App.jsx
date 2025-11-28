@@ -48,6 +48,9 @@ function App() {
     onCancel: null,
   });
 
+  // NUEVO estado para animación de link copiado
+  const [linkCopied, setLinkCopied] = useState(false);
+
   // Función para mostrar el modal de confirmación
   const showConfirm = (message, onConfirm, onCancel) => {
     setConfirmModal({
@@ -556,29 +559,13 @@ function App() {
     }
   };
 
-  const toggleRevealResult = async (giverId) => {
+  const toggleRevealResult = (giverId) => {
     const newValue = !revealedResults[giverId];
     setRevealedResults(prev => ({
       ...prev,
       [giverId]: newValue
     }));
-    
-    // Si se está revelando (no ocultando), marcar en Firebase
-    if (newValue) {
-      try {
-        const newReveladoStatus = {
-          ...reveladoStatus,
-          [giverId]: {
-            abierto: true,
-            timestamp: Date.now()
-          }
-        };
-        await set(ref(database, `exchanges/${currentExchangeId}/revelado`), newReveladoStatus);
-        setReveladoStatus(newReveladoStatus);
-      } catch (error) {
-        console.error('Error al actualizar estado revelado:', error);
-      }
-    }
+    // Ya NO actualiza reveladoStatus en Firebase aquí
   };
 
   const revealAllResults = () => {
@@ -1027,11 +1014,12 @@ function App() {
                       <p style={{ fontSize: '0.95rem', color: '#666', marginBottom: '15px' }}>
                         Comparte este link con tus amigos para que vean sus resultados
                       </p>
-                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '30px' }}>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '30px', position: 'relative' }}>
                         <input
                           type="text"
                           value={`${window.location.origin}/result/${currentExchangeId}`}
                           readOnly
+                          className='input'
                           style={{
                             flex: 1,
                             padding: '12px',
@@ -1046,12 +1034,35 @@ function App() {
                         <button
                           onClick={() => {
                             navigator.clipboard.writeText(`${window.location.origin}/result/${currentExchangeId}`);
+                            setLinkCopied(true);
                             showMessage('¡Link copiado al portapapeles!', 'success');
+                            setTimeout(() => setLinkCopied(false), 1200);
                           }}
                           className="btn btn-primary"
                         >
                           📋 Copiar
                         </button>
+                        {/* Animación visual de link copiado */}
+                        {linkCopied && (
+                          <span
+                            style={{
+                              position: 'absolute',
+                              right: '110px',
+                              top: '50%',
+                              transform: 'translateY(-50%)',
+                              background: '#DAA520',
+                              color: '#fff',
+                              padding: '8px 18px',
+                              borderRadius: '12px',
+                              fontWeight: 'bold',
+                              fontSize: '1rem',
+                              boxShadow: '0 2px 8px rgba(218,165,32,0.25)',
+                              animation: 'fadeInOut 1.2s'
+                            }}
+                          >
+                            ¡Link copiado!
+                          </span>
+                        )}
                       </div>
                     </div>
 
