@@ -96,6 +96,31 @@ body::before {
   margin-top: 50px;
 }
 
+/* Botón de Cerrar Sesión en Header */
+.btn-logout {
+  position: absolute;
+  top: 60px;
+  right: 20px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #FFFFFF 0%, #F5F5DC 100%);
+  color: #8B0000;
+  border: 2px solid #DAA520;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.3);
+  z-index: 100;
+}
+
+.btn-logout:hover {
+  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+  color: #FFFFFF;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 20px rgba(218, 165, 32, 0.6);
+}
+
 .header::before {
   content: "🎅";
   position: absolute;
@@ -177,6 +202,38 @@ body::before {
   outline: none;
   border-color: #DAA520;
   box-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
+}
+
+/* Password Input Container */
+.password-input-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-container input {
+  flex: 1;
+  padding-right: 50px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.3rem;
+  padding: 5px 10px;
+  border-radius: 5px;
+  transition: all 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle:hover {
+  background: rgba(218, 165, 32, 0.1);
+  transform: scale(1.1);
 }
 
 /* Buttons */
@@ -507,12 +564,70 @@ body::before {
 
 /* Messages */
 .message {
-  padding: 15px 20px;
-  border-radius: 10px;
-  margin-bottom: 20px;
+  padding: 18px 25px;
+  border-radius: 12px;
+  margin: 20px 30px;
   font-weight: 600;
-  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
-  border: 2px solid;
+  box-shadow: 0 5px 20px rgba(0, 0, 0, 0.25);
+  border: 3px solid;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  animation: slideInDown 0.4s ease-out, fadeOut 0.5s ease-in 3.5s forwards;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+.message::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 5px;
+  animation: progressBar 4s linear forwards;
+}
+
+@keyframes progressBar {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.message-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  animation: bounce 0.6s ease-in-out;
+}
+
+.message-text {
+  flex: 1;
+  font-size: 1rem;
 }
 
 .message-error {
@@ -521,22 +636,56 @@ body::before {
   border-color: #DC143C;
 }
 
+.message-error::before {
+  background: #DC143C;
+}
+
 .message-success {
   background: linear-gradient(135deg, #F0FFF0 0%, #98FB98 100%);
   color: #006400;
   border-color: #228B22;
+  /* Animación más simple y rápida */
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  animation: fadeOutSuccess 1.2s ease-in 2.2s forwards;
+}
+
+@keyframes fadeOutSuccess {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .message-info {
   background: linear-gradient(135deg, #FFFACD 0%, #FAFAD2 100%);
   color: #8B4513;
   border-color: #DAA520;
+  /* Animación más simple y rápida */
+  opacity: 1;
+  transition: opacity 0.5s ease;
+  animation: fadeOutInfo 1.2s ease-in 2.2s forwards;
+}
+
+@keyframes fadeOutInfo {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
 
 .message-warning {
   background: linear-gradient(135deg, #FFF8DC 0%, #FFE4B5 100%);
   color: #8B4513;
   border-color: #FF8C00;
+}
+
+.message-warning::before {
+  background: #FF8C00;
 }
 
 /* Exchanges Section */
@@ -623,10 +772,106 @@ body::before {
   cursor: not-allowed;
 }
 
+/* Modal de confirmación personalizado */
+.custom-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(196, 30, 58, 0.25);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeInModal 0.3s;
+}
+
+@keyframes fadeInModal {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.custom-modal {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFFFFF 100%);
+  border: 4px solid #DAA520;
+  border-radius: 20px;
+  box-shadow: 0 10px 40px rgba(196, 30, 58, 0.3), 0 0 30px rgba(218, 165, 32, 0.2);
+  padding: 40px 30px 30px;
+  min-width: 320px;
+  max-width: 90vw;
+  text-align: center;
+  position: relative;
+  animation: slideDownModal 0.3s;
+}
+
+@keyframes slideDownModal {
+  from { transform: translateY(-40px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.custom-modal-icon {
+  font-size: 3rem;
+  margin-bottom: 15px;
+  animation: bounce 1.2s infinite;
+}
+
+.custom-modal-message {
+  font-size: 1.15rem;
+  color: #8B0000;
+  font-weight: 700;
+  margin-bottom: 30px;
+  text-shadow: 1px 1px 2px rgba(218, 165, 32, 0.2);
+}
+
+.custom-modal-actions {
+  display: flex;
+  gap: 20px;
+  justify-content: center;
+}
+
+.custom-modal .btn {
+  min-width: 120px;
+  font-size: 1rem;
+  padding: 12px 0;
+  border-radius: 10px;
+}
+
+.custom-modal .btn-danger {
+  background: linear-gradient(135deg, #DC143C 0%, #C41E3A 100%);
+  color: #fff;
+  border-color: #FFD700;
+  font-weight: 700;
+}
+
+.custom-modal .btn-secondary {
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFFFFF 100%);
+  color: #8B0000;
+  border-color: #DAA520;
+  font-weight: 700;
+}
+
+.custom-modal .btn-danger:hover {
+  background: linear-gradient(135deg, #C41E3A 0%, #DC143C 100%);
+  box-shadow: 0 5px 20px rgba(220, 20, 60, 0.3);
+}
+
+.custom-modal .btn-secondary:hover {
+  background: linear-gradient(135deg, #FFFACD 0%, #FFF8DC 100%);
+  box-shadow: 0 5px 15px rgba(218, 165, 32, 0.2);
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .header h1 {
     font-size: 1.8rem;
+  }
+
+  .btn-logout {
+    top: 55px;
+    right: 10px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
 
   .participants-grid {
@@ -650,6 +895,16 @@ body::before {
   
   .exchanges-grid {
     grid-template-columns: 1fr;
+  }
+
+  .message {
+    margin: 15px 10px;
+    padding: 15px 20px;
+    font-size: 0.95rem;
+  }
+
+  .message-icon {
+    font-size: 1.3rem;
   }
 }
 

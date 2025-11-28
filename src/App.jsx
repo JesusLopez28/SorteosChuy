@@ -3,14 +3,12 @@ import { database } from './firebase';
 import { ref, set, get, remove, push } from 'firebase/database';
 import './App.css';
 
-// Contraseña estática para el admin
-const ADMIN_PASSWORD = 'ChuySorteos2804#';
-
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('isAuthenticated') === 'true';
   });
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [activeTab, setActiveTab] = useState('exchanges');
   
   // Sistema de múltiples intercambios
@@ -28,6 +26,30 @@ function App() {
   const [revealedResults, setRevealedResults] = useState({});
   
   const [message, setMessage] = useState({ text: '', type: '' });
+
+  // Estado para el modal de confirmación
+  const [confirmModal, setConfirmModal] = useState({
+    open: false,
+    message: '',
+    onConfirm: null,
+    onCancel: null,
+  });
+
+  // Función para mostrar el modal de confirmación
+  const showConfirm = (message, onConfirm, onCancel) => {
+    setConfirmModal({
+      open: true,
+      message,
+      onConfirm: () => {
+        setConfirmModal({ ...confirmModal, open: false });
+        onConfirm && onConfirm();
+      },
+      onCancel: () => {
+        setConfirmModal({ ...confirmModal, open: false });
+        onCancel && onCancel();
+      },
+    });
+  };
 
   // Cargar intercambios al autenticarse
   useEffect(() => {
@@ -120,33 +142,58 @@ function App() {
   };
 
   const deleteExchange = async (exchangeId) => {
-    if (window.confirm('¿Estás seguro de eliminar este intercambio? Se perderán todos sus datos.')) {
-      try {
-        await remove(ref(database, `exchanges/${exchangeId}`));
-        
-        const newExchanges = exchanges.filter(e => e.id !== exchangeId);
-        setExchanges(newExchanges);
-        
-        if (currentExchangeId === exchangeId) {
-          setCurrentExchangeId(newExchanges.length > 0 ? newExchanges[0].id : null);
+    showConfirm(
+      '¿Estás seguro de eliminar este intercambio? Se perderán todos sus datos.',
+      async () => {
+        try {
+          await remove(ref(database, `exchanges/${exchangeId}`));
+          const newExchanges = exchanges.filter(e => e.id !== exchangeId);
+          setExchanges(newExchanges);
+          if (currentExchangeId === exchangeId) {
+            setCurrentExchangeId(newExchanges.length > 0 ? newExchanges[0].id : null);
+          }
+          showMessage('Intercambio eliminado', 'success');
+        } catch (error) {
+          showMessage('Error al eliminar intercambio: ' + error.message, 'error');
         }
-        
-        showMessage('Intercambio eliminado', 'success');
-      } catch (error) {
-        showMessage('Error al eliminar intercambio: ' + error.message, 'error');
       }
-    }
+    );
   };
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-      localStorage.setItem('isAuthenticated', 'true');
-      setPassword('');
-      showMessage('¡Bienvenido, Chuy!', 'success');
-    } else {
-      showMessage('Contraseña incorrecta', 'error');
+    
+    if (!password.trim()) {
+      showMessage('Por favor ingresa una contraseña', 'error');
+      return;
+    }
+
+    try {
+      // Verificar contraseña en Firebase
+      const passwordRef = ref(database, 'config/adminPassword');
+      const snapshot = await get(passwordRef);
+      
+      let storedPassword = snapshot.val();
+      
+      // Si no existe contraseña en Firebase, establecer la contraseña por defecto
+      if (!storedPassword) {
+        storedPassword = 'Chuy2812!';
+        await set(passwordRef, storedPassword);
+        showMessage('Contraseña inicial configurada en Firebase', 'info');
+      }
+      
+      // Verificar si la contraseña ingresada es correcta
+      if (password === storedPassword) {
+        setIsAuthenticated(true);
+        localStorage.setItem('isAuthenticated', 'true');
+        setPassword('');
+        showMessage('¡Bienvenido, Chuy!', 'success');
+      } else {
+        showMessage('Contraseña incorrecta', 'error');
+      }
+    } catch (error) {
+      showMessage('Error al verificar contraseña: ' + error.message, 'error');
+      console.error('Error de autenticación:', error);
     }
   };
 
@@ -450,20 +497,23 @@ function App() {
   };
 
   const clearAllData = async () => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar TODOS los intercambios? Esta acción no se puede deshacer.')) {
-      try {
-        await remove(ref(database, 'exchanges'));
-        setExchanges([]);
-        setCurrentExchangeId(null);
-        setParticipants([]);
-        setExclusions({});
-        setDrawResults(null);
-        setRevealedResults({});
-        showMessage('Todos los datos han sido eliminados', 'success');
-      } catch (error) {
-        showMessage('Error al eliminar datos: ' + error.message, 'error');
+    showConfirm(
+      '¿Estás seguro de que quieres eliminar TODOS los intercambios? Esta acción no se puede deshacer.',
+      async () => {
+        try {
+          await remove(ref(database, 'exchanges'));
+          setExchanges([]);
+          setCurrentExchangeId(null);
+          setParticipants([]);
+          setExclusions({});
+          setDrawResults(null);
+          setRevealedResults({});
+          showMessage('Todos los datos han sido eliminados', 'success');
+        } catch (error) {
+          showMessage('Error al eliminar datos: ' + error.message, 'error');
+        }
       }
-    }
+    );
   };
 
   if (!isAuthenticated) {
@@ -478,14 +528,24 @@ function App() {
           <form onSubmit={handleLogin} className="login-form">
             <div className="form-group">
               <label htmlFor="password">🔐 Contraseña de Administrador</label>
-              <input
-                type="password"
-                id="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Ingresa la contraseña"
-                autoFocus
-              />
+              <div className="password-input-container">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Ingresa la contraseña"
+                  autoFocus
+                />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onClick={() => setShowPassword(!showPassword)}
+                  title={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                >
+                  {showPassword ? '🙈' : '👁️'}
+                </button>
+              </div>
             </div>
             <button type="submit" className="btn btn-primary">
               🎅 Iniciar Sesión
@@ -493,7 +553,8 @@ function App() {
           </form>
           {message.text && (
             <div className={`message message-${message.type}`}>
-              {message.text}
+              <span className="message-icon">{message.type === 'error' ? '❌' : message.type === 'success' ? '✅' : 'ℹ️'}</span>
+              <span className="message-text">{message.text}</span>
             </div>
           )}
         </div>
@@ -503,7 +564,36 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Modal de confirmación */}
+      {confirmModal.open && (
+        <div className="custom-modal-overlay">
+          <div className="custom-modal">
+            <div className="custom-modal-icon">⚠️</div>
+            <div className="custom-modal-message">{confirmModal.message}</div>
+            <div className="custom-modal-actions">
+              <button className="btn btn-danger" onClick={confirmModal.onConfirm}>Sí, confirmar</button>
+              <button className="btn btn-secondary" onClick={confirmModal.onCancel}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
       <div className="header">
+        <button
+          onClick={() => {
+            showConfirm(
+              '¿Estás seguro de que quieres cerrar sesión?',
+              () => {
+                setIsAuthenticated(false);
+                localStorage.removeItem('isAuthenticated');
+                showMessage('Sesión cerrada correctamente', 'success');
+              }
+            );
+          }}
+          className="btn-logout"
+          title="Cerrar sesión"
+        >
+          🚪 Cerrar Sesión
+        </button>
         <h1>🎄 Sorteos Chuy 🎅</h1>
         <p>✨ Sistema de Amigo Secreto Navideño & Año Nuevo ✨</p>
         <p style={{ marginTop: '10px', fontSize: '1.3rem' }}>🎁 ¡Feliz Navidad y Próspero Año Nuevo! 🎉</p>
@@ -511,7 +601,8 @@ function App() {
 
       {message.text && (
         <div className={`message message-${message.type}`}>
-          {message.text}
+          <span className="message-icon">{message.type === 'error' ? '❌' : message.type === 'success' ? '✅' : message.type === 'warning' ? '⚠️' : 'ℹ️'}</span>
+          <span className="message-text">{message.text}</span>
         </div>
       )}
 
@@ -765,12 +856,6 @@ function App() {
               )}
               <button onClick={clearAllData} className="btn btn-danger">
                 🗑️ Eliminar Todos los Intercambios
-              </button>
-              <button onClick={() => {
-                setIsAuthenticated(false);
-                localStorage.removeItem('isAuthenticated');
-              }} className="btn btn-secondary">
-                🚪 Cerrar Sesión
               </button>
             </div>
           </>
