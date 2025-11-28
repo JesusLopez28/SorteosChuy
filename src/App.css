@@ -204,6 +204,23 @@ body::before {
   box-shadow: 0 0 10px rgba(218, 165, 32, 0.5);
 }
 
+.form-group textarea {
+  padding: 12px;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(218, 165, 32, 0.08);
+  resize: vertical;
+}
+
+.form-group textarea:focus {
+  outline: none;
+  border-color: #DAA520;
+  box-shadow: 0 0 10px rgba(218, 165, 32, 0.15);
+}
+
 /* Password Input Container */
 .password-input-container {
   position: relative;
