@@ -607,7 +607,6 @@ body::before {
   top: 0;
   height: 100%;
   width: 5px;
-  animation: progressBar 4s linear forwards;
 }
 
 @keyframes progressBar {
@@ -859,6 +858,34 @@ body::before {
 .custom-modal .btn-secondary:hover {
   background: linear-gradient(135deg, #FFFACD 0%, #FFF8DC 100%);
   box-shadow: 0 5px 15px rgba(218, 165, 32, 0.2);
+}
+
+/* Estilo personalizado para el select del modal */
+.modal-select {
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 1rem;
+  border: 2px solid #DAA520;
+  min-width: 180px;
+  background: linear-gradient(135deg, #FFF8DC 0%, #FFFFFF 100%);
+  color: #8B0000;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(218, 165, 32, 0.12);
+  transition: border-color 0.3s, box-shadow 0.3s;
+  outline: none;
+  margin-bottom: 5px;
+}
+
+.modal-select:focus {
+  border-color: #C41E3A;
+  box-shadow: 0 0 10px rgba(196, 30, 58, 0.15);
+}
+
+.modal-select option {
+  background: #FFF8DC;
+  color: #8B0000;
+  font-weight: 500;
+  padding: 8px;
 }
 
 /* Responsive */

@@ -19,6 +19,7 @@ function App() {
   // Datos del intercambio actual
   const [participants, setParticipants] = useState([]);
   const [newParticipantName, setNewParticipantName] = useState('');
+  const [bulkParticipantText, setBulkParticipantText] = useState(''); // NUEVO estado para textarea
   const [exclusions, setExclusions] = useState({});
   const [drawResults, setDrawResults] = useState(null);
   
@@ -31,6 +32,16 @@ function App() {
   const [confirmModal, setConfirmModal] = useState({
     open: false,
     message: '',
+    onConfirm: null,
+    onCancel: null,
+  });
+
+  // Estado para el modal de "Excluir todos menos uno"
+  const [excludeModal, setExcludeModal] = useState({
+    open: false,
+    giverId: null,
+    options: [],
+    selectedId: '',
     onConfirm: null,
     onCancel: null,
   });
@@ -227,6 +238,38 @@ function App() {
     }
   };
 
+  // NUEVA función para agregar múltiples participantes desde textarea
+  const addBulkParticipants = async () => {
+    if (!currentExchangeId) {
+      showMessage('Selecciona o crea un intercambio primero', 'error');
+      return;
+    }
+    const names = bulkParticipantText
+      .split('\n')
+      .map(n => n.trim())
+      .filter(n => n.length > 0);
+
+    if (names.length === 0) {
+      showMessage('No hay nombres válidos para agregar', 'error');
+      return;
+    }
+
+    try {
+      const participantsRef = ref(database, `exchanges/${currentExchangeId}/participants`);
+      const newParticipants = [];
+      for (const name of names) {
+        const newParticipantRef = push(participantsRef);
+        await set(newParticipantRef, name);
+        newParticipants.push({ id: newParticipantRef.key, name });
+      }
+      setParticipants([...participants, ...newParticipants]);
+      setBulkParticipantText('');
+      showMessage(`Se agregaron ${newParticipants.length} participantes`, 'success');
+    } catch (error) {
+      showMessage('Error al agregar participantes: ' + error.message, 'error');
+    }
+  };
+
   const deleteParticipant = async (participantId) => {
     try {
       await remove(ref(database, `exchanges/${currentExchangeId}/participants/${participantId}`));
@@ -282,6 +325,33 @@ function App() {
     }
   };
 
+  // Función para excluir a todos menos a uno específico (ahora solo lógica, sin prompt/confirm)
+  const excludeAllExceptOne = async (giverId, winnerId) => {
+    const otherParticipants = participants.filter(p => p.id !== giverId);
+
+    if (otherParticipants.length < 1) {
+      showMessage('No hay suficientes participantes', 'error');
+      return;
+    }
+
+    // Crear array con todos los IDs excepto el ganador
+    const newExclusions = { ...exclusions };
+    newExclusions[giverId] = otherParticipants
+      .filter(p => p.id !== winnerId)
+      .map(p => p.id);
+
+    try {
+      await set(ref(database, `exchanges/${currentExchangeId}/exclusions`), newExclusions);
+      setExclusions(newExclusions);
+      const winnerName = participants.find(p => p.id === winnerId)?.name;
+      const giverName = participants.find(p => p.id === giverId)?.name;
+      showMessage(`✅ ${giverName} ahora solo puede regalarle a ${winnerName}`, 'success');
+    } catch (error) {
+      showMessage('Error al actualizar exclusiones: ' + error.message, 'error');
+    }
+  };
+
+  // Función para realizar el sorteo
   const performDraw = async () => {
     if (participants.length < 2) {
       showMessage('Se necesitan al menos 2 participantes', 'error');
@@ -516,6 +586,34 @@ function App() {
     );
   };
 
+  // Abrir el modal de excluir todos menos uno
+  const openExcludeModal = (giverId) => {
+    const otherParticipants = participants.filter(p => p.id !== giverId);
+    setExcludeModal({
+      open: true,
+      giverId,
+      options: otherParticipants,
+      selectedId: otherParticipants.length > 0 ? otherParticipants[0].id : '',
+      onConfirm: async (selectedId) => {
+        await excludeAllExceptOne(giverId, selectedId);
+        setExcludeModal(prev => ({ ...prev, open: false }));
+      },
+      onCancel: () => setExcludeModal(prev => ({ ...prev, open: false })),
+    });
+  };
+
+  // Limpiar todas las exclusiones para una persona
+  const clearAllExclusionsForPerson = async (giverId) => {
+    const newExclusions = { ...exclusions };
+    newExclusions[giverId] = [];
+    try {
+      await set(ref(database, `exchanges/${currentExchangeId}/exclusions`), newExclusions);
+      setExclusions(newExclusions);
+    } catch (error) {
+      showMessage('Error al eliminar exclusiones: ' + error.message, 'error');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="app-container">
@@ -577,6 +675,52 @@ function App() {
           </div>
         </div>
       )}
+
+      {/* Modal de excluir todos menos uno */}
+      {excludeModal.open && (
+        <div className="custom-modal-overlay">
+          <div className="custom-modal">
+            <div className="custom-modal-icon">🚫</div>
+            <div className="custom-modal-message">
+              <span>
+                <b>
+                  ¿A quién quieres que {participants.find(p => p.id === excludeModal.giverId)?.name} le regale a la fuerza?
+                </b>
+              </span>
+              <br />
+              <span style={{ fontSize: '0.95rem', color: '#333', marginTop: '10px', display: 'block' }}>
+                Se excluirán todos los demás participantes.
+              </span>
+            </div>
+            <div style={{ marginBottom: '25px' }}>
+              <select
+                className="modal-select" // NUEVA clase para mejorar el estilo
+                value={excludeModal.selectedId}
+                onChange={e => setExcludeModal({ ...excludeModal, selectedId: e.target.value })}
+              >
+                {excludeModal.options.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="custom-modal-actions">
+              <button
+                className="btn btn-danger"
+                onClick={() => excludeModal.onConfirm && excludeModal.onConfirm(excludeModal.selectedId)}
+              >
+                Sí, confirmar
+              </button>
+              <button
+                className="btn btn-secondary"
+                onClick={excludeModal.onCancel}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="header">
         <button
           onClick={() => {
@@ -700,6 +844,32 @@ function App() {
                     </button>
                   </div>
                 </div>
+                {/* NUEVO textarea para agregar varios participantes */}
+                <div className="form-group" style={{ marginTop: '18px' }}>
+                  <label>✍️ Agregar varios participantes (uno por línea)</label>
+                  <textarea
+                    value={bulkParticipantText}
+                    onChange={e => setBulkParticipantText(e.target.value)}
+                    placeholder="Escribe un nombre por línea..."
+                    rows={4}
+                    style={{
+                      width: '100%',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      fontSize: '1rem',
+                      border: '2px solid #e0e0e0',
+                      marginBottom: '10px',
+                      resize: 'vertical'
+                    }}
+                  />
+                  <button
+                    onClick={addBulkParticipants}
+                    className="btn btn-primary"
+                    disabled={!bulkParticipantText.trim()}
+                  >
+                    ➕ Agregar Todos
+                  </button>
+                </div>
 
                 {participants.length === 0 ? (
                   <div className="message message-info" style={{ marginTop: '20px' }}>
@@ -744,6 +914,27 @@ function App() {
                       return (
                         <div key={giver.id} className="exclusion-item">
                           <h3>🎅 {giver.name} NO puede darle regalo a:</h3>
+                          
+                          {/* Botones de acceso rápido */}
+                          <div style={{ marginBottom: '15px', display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => openExcludeModal(giver.id)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.85rem' }}
+                            >
+                              🎯 Excluir todos menos uno...
+                            </button>
+                            {excluded.length > 0 && (
+                              <button
+                                onClick={() => clearAllExclusionsForPerson(giver.id)}
+                                className="btn btn-secondary btn-sm"
+                                style={{ fontSize: '0.85rem' }}
+                              >
+                                🔄 Limpiar todas las exclusiones
+                              </button>
+                            )}
+                          </div>
+
                           <div className="checkbox-group">
                             {otherParticipants.map((receiver) => {
                               const isExcluded = excluded.includes(receiver.id);
@@ -762,6 +953,11 @@ function App() {
                                     disabled={isDisabled}
                                   />
                                   {receiver.name}
+                                  {excluded.length === otherParticipants.length - 1 && !isExcluded && (
+                                    <span style={{ marginLeft: '5px', color: '#28a745', fontWeight: 'bold' }}>
+                                      ⭐ (¡Único disponible!)
+                                    </span>
+                                  )}
                                 </label>
                               );
                             })}
