@@ -560,12 +560,12 @@ function App() {
   };
 
   const toggleRevealResult = (giverId) => {
-    const newValue = !revealedResults[giverId];
+    // Solo cambia el estado local de revelado en la sesión actual
     setRevealedResults(prev => ({
       ...prev,
-      [giverId]: newValue
+      [giverId]: !prev[giverId]
     }));
-    // Ya NO actualiza reveladoStatus en Firebase aquí
+    // No modifica reveladoStatus ni actualiza Firebase
   };
 
   const revealAllResults = () => {
