@@ -906,87 +906,315 @@ body::before {
 }
 
 /* Responsive */
+@media (max-width: 1024px) {
+  .app-container {
+    max-width: 98vw;
+    border-radius: 12px;
+    padding: 0;
+  }
+  .header {
+    padding: 30px 10px 20px;
+    margin-top: 30px;
+  }
+  .content {
+    padding: 18px;
+  }
+}
+
 @media (max-width: 768px) {
+  body {
+    font-size: 0.97rem;
+    padding: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+  #root {
+    padding: 5px;
+    min-height: 100vh;
+  }
+  .app-container {
+    max-width: 100vw;
+    border-radius: 8px;
+    box-shadow: none;
+    border-width: 2px;
+    padding: 0;
+  }
+  .header {
+    padding: 18px 5px 10px;
+    margin-top: 10px;
+    font-size: 1rem;
+  }
   .header h1 {
-    font-size: 1.8rem;
+    font-size: 1.2rem;
+    margin-bottom: 5px;
   }
-
-  .btn-logout {
-    top: 55px;
-    right: 10px;
-    padding: 8px 12px;
-    font-size: 0.8rem;
-  }
-
-  .participants-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .result-card {
-    flex-direction: column;
-    text-align: center;
-    gap: 10px;
-  }
-
-  .tabs {
-    overflow-x: auto;
-  }
-
-  .tab {
-    padding: 12px 20px;
-    white-space: nowrap;
-  }
-  
-  .exchanges-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .message {
-    margin: 15px 10px;
-    padding: 15px 20px;
+  .header p {
     font-size: 0.95rem;
   }
-
-  .message-icon {
-    font-size: 1.3rem;
+  .btn-logout {
+    top: 15px;
+    right: 8px;
+    padding: 6px 10px;
+    font-size: 0.75rem;
   }
-
-  .share-link-container {
-    margin-bottom: 25px;
+  .content {
+    padding: 8px;
   }
-
-  .share-link-container > div {
+  .login-container {
+    padding: 18px 5px;
+    max-width: 98vw;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 0.95rem;
+    padding: 8px;
+    border-radius: 6px;
+  }
+  .tabs {
+    gap: 5px;
+    padding: 5px;
+    font-size: 0.95rem;
+  }
+  .tab {
+    padding: 8px 12px;
+    font-size: 0.95rem;
+  }
+  .tab.active {
+    font-size: 1rem;
+  }
+  .participants-grid {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .participant-card {
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+  .participant-card h3 {
+    font-size: 1rem;
+  }
+  .participant-actions {
+    gap: 5px;
+    margin-top: 8px;
+  }
+  .exclusions-container {
+    gap: 10px;
+  }
+  .exclusion-item {
+    padding: 10px;
+    border-radius: 8px;
+  }
+  .checkbox-group {
+    grid-template-columns: 1fr;
+    gap: 5px;
+  }
+  .results-container {
+    gap: 10px;
+  }
+  .results-container h2 {
+    font-size: 1.2rem;
+    margin-bottom: 10px;
+  }
+  .result-card {
+    padding: 10px;
+    border-radius: 8px;
     flex-direction: column;
+    gap: 5px;
+    font-size: 0.95rem;
   }
-
-  .share-link-container button {
-    width: 100%;
+  .result-card .giver,
+  .result-card .receiver {
+    font-size: 1rem;
+  }
+  .result-card .arrow {
+    font-size: 1.2rem;
+  }
+  .actions-bar {
+    gap: 8px;
+    margin-top: 10px;
+  }
+  .message {
+    margin: 8px 2px;
+    padding: 8px 10px;
+    font-size: 0.9rem;
+    border-radius: 8px;
+  }
+  .message-icon {
+    font-size: 1.1rem;
+  }
+  .share-link-container {
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    font-size: 0.95rem;
+  }
+  .share-link-container h3 {
+    font-size: 1.1rem;
+    margin-bottom: 5px;
+  }
+  .exchanges-section {
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+  .exchanges-section h2 {
+    font-size: 1.1rem;
+    margin-bottom: 8px;
+  }
+  .exchanges-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .exchange-card {
+    padding: 10px;
+    border-radius: 8px;
+    font-size: 0.95rem;
+  }
+  .exchange-card h3 {
+    font-size: 1rem;
+  }
+  .btn-sm {
+    padding: 5px 10px;
+    font-size: 0.8rem;
+  }
+  .custom-modal {
+    padding: 18px 5px 10px;
+    min-width: 90vw;
+    border-radius: 10px;
+  }
+  .custom-modal-icon {
+    font-size: 2rem;
+    margin-bottom: 8px;
+  }
+  .custom-modal-message {
+    font-size: 1rem;
+    margin-bottom: 10px;
+  }
+  .custom-modal-actions {
+    gap: 8px;
+  }
+  .custom-modal .btn {
+    min-width: 80px;
+    font-size: 0.9rem;
+    padding: 8px 0;
+    border-radius: 8px;
+  }
+  .modal-select {
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    min-width: 120px;
+    margin-bottom: 2px;
   }
 }
 
-/* Share Link Container */
-.share-link-container {
-  background: linear-gradient(135deg, #E3F2FD 0%, #BBDEFB 100%);
-  padding: 25px;
-  border-radius: 15px;
-  border: 3px solid #1976D2;
-  margin-bottom: 35px;
-  box-shadow: 0 5px 20px rgba(25, 118, 210, 0.3);
-  text-align: center;
-}
-
-.share-link-container h3 {
-  color: #0D47A1;
-  font-size: 1.5rem;
-  margin-bottom: 10px;
-  text-shadow: 1px 1px 2px rgba(25, 118, 210, 0.2);
-  font-weight: 800;
-}
-
-@keyframes fadeInOut {
-  0% { opacity: 0; transform: scale(0.8); }
-  10% { opacity: 1; transform: scale(1.05); }
-  80% { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.95); }
+/* Responsive extremo para móviles pequeños */
+@media (max-width: 480px) {
+  body, #root, .app-container {
+    min-width: 100vw;
+    max-width: 100vw;
+    padding: 0;
+    margin: 0;
+  }
+  .header {
+    padding: 8px 2px 5px;
+    margin-top: 2px;
+  }
+  .header h1 {
+    font-size: 0.95rem;
+  }
+  .header p {
+    font-size: 0.8rem;
+  }
+  .btn-logout {
+    top: 5px;
+    right: 2px;
+    padding: 4px 6px;
+    font-size: 0.65rem;
+  }
+  .content {
+    padding: 2px;
+  }
+  .login-container {
+    padding: 5px 2px;
+    max-width: 100vw;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    font-size: 0.85rem;
+    padding: 5px;
+    border-radius: 4px;
+  }
+  .tabs {
+    gap: 2px;
+    padding: 2px;
+    font-size: 0.85rem;
+  }
+  .tab {
+    padding: 5px 6px;
+    font-size: 0.85rem;
+  }
+  .participants-grid,
+  .exchanges-grid {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+  .participant-card,
+  .exchange-card,
+  .exclusion-item,
+  .result-card {
+    padding: 5px;
+    border-radius: 5px;
+    font-size: 0.85rem;
+  }
+  .actions-bar {
+    gap: 4px;
+    margin-top: 5px;
+  }
+  .message {
+    margin: 4px 1px;
+    padding: 4px 5px;
+    font-size: 0.8rem;
+    border-radius: 5px;
+  }
+  .share-link-container {
+    padding: 5px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+  }
+  .custom-modal {
+    padding: 8px 2px 5px;
+    min-width: 98vw;
+    border-radius: 5px;
+  }
+  .custom-modal-icon {
+    font-size: 1.2rem;
+    margin-bottom: 4px;
+  }
+  .custom-modal-message {
+    font-size: 0.85rem;
+    margin-bottom: 5px;
+  }
+  .custom-modal-actions {
+    gap: 4px;
+  }
+  .custom-modal .btn {
+    min-width: 50px;
+    font-size: 0.8rem;
+    padding: 5px 0;
+    border-radius: 5px;
+  }
+  .modal-select {
+    padding: 5px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    min-width: 80px;
+    margin-bottom: 1px;
+  }
 }
 
