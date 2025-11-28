@@ -122,29 +122,89 @@ function ResultView() {
     }
   };
 
+  const generateResultHtml = () => {
+    const giverName = participants.find(p => p.id === selectedParticipant)?.name || '';
+    const receiverName = result?.name || '';
+    return `
+      <html>
+        <head>
+          <style>
+            body { background: #FFF8DC; font-family: 'Segoe UI', Arial, sans-serif; margin:0; padding:0; }
+            .result-card-big { 
+              max-width: 400px; margin: 40px auto; background: #fff; border-radius: 18px; 
+              box-shadow: 0 4px 24px #0002; padding: 32px 24px; text-align: center; 
+            }
+            .confetti { font-size: 2.5rem; }
+            .result-name { font-size: 1.3rem; margin: 18px 0; }
+            .giver-name, .receiver-name { font-weight: bold; }
+            .arrow-big { margin: 0 12px; }
+            .result-message-box { margin-top: 16px; }
+            .result-tip { color: #b8860b; font-size: 1rem; margin-top: 8px; }
+          </style>
+        </head>
+        <body>
+          <div class="result-card-big">
+            <div class="confetti">🎉</div>
+            <h2>🎊 ¡Tu Amigo Secreto es! 🎊</h2>
+            <div class="result-name">
+              <span class="giver-name">${giverName}</span>
+              <span class="arrow-big">🎁 → 🎁</span>
+              <span class="receiver-name">${receiverName}</span>
+            </div>
+            <div class="result-message-box">
+              <p>🎅 Le darás tu regalo a <strong>${receiverName}</strong> 🎄</p>
+              <p class="result-tip">✨ ¡Prepara un regalo especial! ✨</p>
+            </div>
+          </div>
+        </body>
+      </html>
+    `;
+  };
+
   const handleSaveImage = async () => {
-    if (!resultRef.current) return;
+    if (!result) return;
 
     try {
       showMessage('Preparando imagen...', 'info');
-      
-      const canvas = await html2canvas(resultRef.current, {
-        backgroundColor: '#FFF8DC',
-        scale: 2,
-        logging: false,
-        useCORS: true
-      });
+      const htmlContent = generateResultHtml();
+      const win = window.open('', '_blank', 'width=500,height=700');
+      win.document.write(htmlContent);
 
-      canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        const participantName = participants.find(p => p.id === selectedParticipant)?.name || 'Participante';
-        link.download = `amigo-secreto-${participantName}.png`;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-        showMessage('¡Imagen guardada exitosamente!', 'success');
-      });
+      // Espera a que el contenido se renderice
+      setTimeout(async () => {
+        const card = win.document.querySelector('.result-card-big');
+        if (!card) {
+          showMessage('No se pudo generar la imagen.', 'error');
+          win.close();
+          return;
+        }
+        // Carga html2canvas en la ventana auxiliar
+        const script = win.document.createElement('script');
+        script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+        script.onload = () => {
+          win.html2canvas(card, {
+            backgroundColor: '#FFF8DC',
+            scale: 2,
+            useCORS: true
+          }).then(canvas => {
+            canvas.toBlob((blob) => {
+              const url = URL.createObjectURL(blob);
+              const link = win.document.createElement('a');
+              const participantName = participants.find(p => p.id === selectedParticipant)?.name || 'Participante';
+              link.download = `amigo-secreto-${participantName}.png`;
+              link.href = url;
+              link.click();
+              URL.revokeObjectURL(url);
+              showMessage('¡Imagen guardada exitosamente!', 'success');
+              win.close();
+            });
+          }).catch(() => {
+            showMessage('Error al generar la imagen.', 'error');
+            win.close();
+          });
+        };
+        win.document.body.appendChild(script);
+      }, 400);
     } catch (error) {
       showMessage('Error al guardar imagen: ' + error.message, 'error');
     }
