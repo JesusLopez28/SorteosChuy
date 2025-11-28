@@ -23,8 +23,10 @@ function App() {
   const [exclusions, setExclusions] = useState({});
   const [drawResults, setDrawResults] = useState(null);
   
-  // Revelar resultados individuales
+  // Revelar resultados individuales (temporal, solo en sesión)
   const [revealedResults, setRevealedResults] = useState({});
+  // Campo revelado permanente en Firebase
+  const [reveladoStatus, setReveladoStatus] = useState({});
   
   const [message, setMessage] = useState({ text: '', type: '' });
 
@@ -108,11 +110,13 @@ function App() {
         setExclusions(data.exclusions || {});
         setDrawResults(data.drawResults || null);
         setRevealedResults({});
+        setReveladoStatus(data.revelado || {});
       } else {
         setParticipants([]);
         setExclusions({});
         setDrawResults(null);
         setRevealedResults({});
+        setReveladoStatus({});
       }
     } catch (error) {
       showMessage('Error al cargar datos del intercambio: ' + error.message, 'error');
@@ -362,8 +366,11 @@ function App() {
       const result = generateDrawImproved();
       if (result) {
         await set(ref(database, `exchanges/${currentExchangeId}/drawResults`), result);
+        // Limpiar estado de revelado al hacer nuevo sorteo
+        await set(ref(database, `exchanges/${currentExchangeId}/revelado`), {});
         setDrawResults(result);
         setRevealedResults({});
+        setReveladoStatus({});
         setActiveTab('results');
         showMessage('¡Sorteo realizado exitosamente!', 'success');
       } else {
@@ -539,19 +546,39 @@ function App() {
   const clearResults = async () => {
     try {
       await remove(ref(database, `exchanges/${currentExchangeId}/drawResults`));
+      await remove(ref(database, `exchanges/${currentExchangeId}/revelado`));
       setDrawResults(null);
       setRevealedResults({});
+      setReveladoStatus({});
       showMessage('Resultados eliminados', 'success');
     } catch (error) {
       showMessage('Error al eliminar resultados: ' + error.message, 'error');
     }
   };
 
-  const toggleRevealResult = (giverId) => {
+  const toggleRevealResult = async (giverId) => {
+    const newValue = !revealedResults[giverId];
     setRevealedResults(prev => ({
       ...prev,
-      [giverId]: !prev[giverId]
+      [giverId]: newValue
     }));
+    
+    // Si se está revelando (no ocultando), marcar en Firebase
+    if (newValue) {
+      try {
+        const newReveladoStatus = {
+          ...reveladoStatus,
+          [giverId]: {
+            abierto: true,
+            timestamp: Date.now()
+          }
+        };
+        await set(ref(database, `exchanges/${currentExchangeId}/revelado`), newReveladoStatus);
+        setReveladoStatus(newReveladoStatus);
+      } catch (error) {
+        console.error('Error al actualizar estado revelado:', error);
+      }
+    }
   };
 
   const revealAllResults = () => {
@@ -578,6 +605,7 @@ function App() {
           setExclusions({});
           setDrawResults(null);
           setRevealedResults({});
+          setReveladoStatus({});
           showMessage('Todos los datos han sido eliminados', 'success');
         } catch (error) {
           showMessage('Error al eliminar datos: ' + error.message, 'error');
@@ -992,6 +1020,41 @@ function App() {
                 ) : (
                   <div className="results-container">
                     <h2>📋 Resultados del Sorteo Navideño 🎄</h2>
+                    
+                    {/* Link para compartir */}
+                    <div className="share-link-container">
+                      <h3>🔗 Link para Compartir con Participantes</h3>
+                      <p style={{ fontSize: '0.95rem', color: '#666', marginBottom: '15px' }}>
+                        Comparte este link con tus amigos para que vean sus resultados
+                      </p>
+                      <div style={{ display: 'flex', gap: '10px', alignItems: 'center', marginBottom: '30px' }}>
+                        <input
+                          type="text"
+                          value={`${window.location.origin}/result/${currentExchangeId}`}
+                          readOnly
+                          style={{
+                            flex: 1,
+                            padding: '12px',
+                            border: '2px solid #DAA520',
+                            borderRadius: '8px',
+                            fontSize: '0.95rem',
+                            backgroundColor: '#FFF8DC',
+                            fontWeight: '600'
+                          }}
+                          onClick={(e) => e.target.select()}
+                        />
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(`${window.location.origin}/result/${currentExchangeId}`);
+                            showMessage('¡Link copiado al portapapeles!', 'success');
+                          }}
+                          className="btn btn-primary"
+                        >
+                          📋 Copiar
+                        </button>
+                      </div>
+                    </div>
+
                     <div className="results-actions" style={{ marginBottom: '20px', display: 'flex', gap: '10px', justifyContent: 'center' }}>
                       <button onClick={revealAllResults} className="btn btn-secondary">
                         👁️ Mostrar Todos
@@ -1004,10 +1067,27 @@ function App() {
                       const receiverId = drawResults[giver.id];
                       const receiver = participants.find(p => p.id === receiverId);
                       const isRevealed = revealedResults[giver.id];
+                      const haAbiertoAntes = reveladoStatus[giver.id]?.abierto;
+                      const timestampAbierto = reveladoStatus[giver.id]?.timestamp;
                       
                       return receiver ? (
                         <div key={giver.id} className="result-card">
-                          <span className="giver">🎅 {giver.name}</span>
+                          <span className="giver">
+                            🎅 {giver.name}
+                            {haAbiertoAntes && (
+                              <span 
+                                style={{ 
+                                  marginLeft: '8px', 
+                                  fontSize: '0.85rem', 
+                                  color: '#28a745',
+                                  fontWeight: 'bold'
+                                }}
+                                title={`Abierto el ${new Date(timestampAbierto).toLocaleString('es-MX')}`}
+                              >
+                                ✓ Ya lo abrió
+                              </span>
+                            )}
+                          </span>
                           <span className="arrow">🎁 → 🎁</span>
                           <span 
                             className="receiver"
