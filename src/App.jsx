@@ -195,7 +195,7 @@ function App() {
       
       // Si no existe contraseña en Firebase, establecer la contraseña por defecto
       if (!storedPassword) {
-        storedPassword = 'Chuy2812!';
+        storedPassword = 'Chuy2804!';
         await set(passwordRef, storedPassword);
         showMessage('Contraseña inicial configurada en Firebase', 'info');
       }
