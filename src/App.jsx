@@ -28,6 +28,9 @@ function App() {
   // Campo revelado permanente en Firebase
   const [reveladoStatus, setReveladoStatus] = useState({});
   
+  // Estado para deseos de participantes
+  const [participantWishes, setParticipantWishes] = useState({});
+  
   const [message, setMessage] = useState({ text: '', type: '' });
 
   // Estado para el modal de confirmación
@@ -114,12 +117,14 @@ function App() {
         setDrawResults(data.drawResults || null);
         setRevealedResults({});
         setReveladoStatus(data.revelado || {});
+        setParticipantWishes(data.wishes || {});
       } else {
         setParticipants([]);
         setExclusions({});
         setDrawResults(null);
         setRevealedResults({});
         setReveladoStatus({});
+        setParticipantWishes({});
       }
     } catch (error) {
       showMessage('Error al cargar datos del intercambio: ' + error.message, 'error');
@@ -629,6 +634,17 @@ function App() {
     }
   };
 
+  // Función para generar enlace a lista de deseos pública del participante
+  const getPublicWishLink = (participantId) => {
+    const baseUrl = window.location.origin;
+    return `${baseUrl}/view-wishes/${currentExchangeId}?participantId=${participantId}`;
+  };
+
+  const openPublicWishView = (participantId) => {
+    const link = getPublicWishLink(participantId);
+    window.open(link, '_blank');
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="app-container">
@@ -838,6 +854,12 @@ function App() {
                 onClick={() => setActiveTab('results')}
               >
                 🎁 Resultados
+              </button>
+              <button
+                className={`tab ${activeTab === 'wishes' ? 'active' : ''}`}
+                onClick={() => setActiveTab('wishes')}
+              >
+                📝 Deseos
               </button>
             </div>
 
@@ -1127,6 +1149,76 @@ function App() {
                       </button>
                     </div>
                   </div>
+                )}
+              </div>
+            )}
+
+            {activeTab === 'wishes' && (
+              <div>
+                <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#2c5f2d' }}>
+                  📝 Listas de Deseos de Participantes 🎁
+                </h2>
+                
+                {participants.length === 0 ? (
+                  <div className="message message-info">
+                    🎅 No hay participantes registrados
+                  </div>
+                ) : (
+                  <>
+                    <div className="message message-info" style={{ marginBottom: '20px' }}>
+                      💡 Los participantes pueden agregar sus deseos desde el link de resultados. Aquí puedes ver y descargar las listas.
+                    </div>
+                    
+                    <div className="wishes-admin-grid">
+                      {participants.map((participant) => {
+                        const wishes = participantWishes[participant.id];
+                        const hasWishes = wishes && wishes.items && wishes.items.length > 0;
+                        
+                        return (
+                          <div key={participant.id} className="wish-admin-card">
+                            <div className="wish-admin-header">
+                              <h3>🎅 {participant.name}</h3>
+                              {hasWishes && (
+                                <span className="wish-count-badge">
+                                  {wishes.items.length} {wishes.items.length === 1 ? 'deseo' : 'deseos'}
+                                </span>
+                              )}
+                            </div>
+                            
+                            {hasWishes ? (
+                              <>
+                                <div className="wish-admin-preview">
+                                  {wishes.items.slice(0, 3).map((wish, index) => (
+                                    <div key={index} className="wish-preview-item">
+                                      <span className="wish-preview-number">#{index + 1}</span>
+                                      <span className="wish-preview-name">{wish.name}</span>
+                                    </div>
+                                  ))}
+                                  {wishes.items.length > 3 && (
+                                    <div className="wish-preview-more">
+                                      +{wishes.items.length - 3} más...
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <button
+                                  onClick={() => openPublicWishView(participant.id)}
+                                  className="btn btn-primary"
+                                  style={{ width: '100%', marginTop: '15px' }}
+                                >
+                                  🔗 Ver Lista Pública
+                                </button>
+                              </>
+                            ) : (
+                              <div className="no-wishes-admin">
+                                <p>😔 Aún no ha agregado deseos</p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </>
                 )}
               </div>
             )}

@@ -340,6 +340,33 @@ function ResultView() {
                   🔄 Ver Otro Resultado
                 </button>
               </div>
+              
+              {/* Sección de listas de deseos */}
+              <div className="wishlist-link-container">
+                <p className="wishlist-link-text">
+                  🎁 ¿Quieres compartir tu lista de deseos?
+                </p>
+                <a 
+                  href={`/wishes/${exchangeId}?participantId=${selectedParticipant}`}
+                  className="btn-wishlist-link"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  📝 Ir a mi Lista de Deseos
+                </a>
+                <a 
+                  href={`/view-wishes/${exchangeId}`}
+                  className="btn-wishlist-link"
+                  style={{marginTop: '10px', background: 'linear-gradient(135deg, #28a745 0%, #218838 100%)'}}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  👀 Ver Listas de Deseos de Todos
+                </a>
+                <p className="wishlist-hint">
+                  💡 Comparte estos enlaces con todos los participantes
+                </p>
+              </div>
             </div>
           </div>
         )}
