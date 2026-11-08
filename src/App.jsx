@@ -527,36 +527,37 @@ function App() {
 
   // Verificar condición de Hall para emparejamiento perfecto
   const checkHallCondition = () => {
-    // Para cada subconjunto de participantes, verificar que el conjunto
-    // de receptores válidos sea al menos del mismo tamaño
-    const n = participants.length;
-    
-    // Generar todos los subconjuntos no vacíos (2^n - 1)
-    for (let mask = 1; mask < (1 << n); mask++) {
-      const subset = [];
-      const validReceivers = new Set();
-      
-      for (let i = 0; i < n; i++) {
-        if (mask & (1 << i)) {
-          const giver = participants[i];
-          subset.push(giver);
-          
-          // Añadir receptores válidos para este giver
-          const excluded = exclusions[giver.id] || [];
-          participants.forEach(p => {
-            if (p.id !== giver.id && !excluded.includes(p.id)) {
-              validReceivers.add(p.id);
-            }
-          });
+    // Un emparejamiento perfecto es equivalente a cumplir la condición de Hall,
+    // pero este algoritmo evita recorrer los 2^n subconjuntos posibles.
+    const receiverToGiver = new Map();
+
+    const findReceiver = (giver, visitedReceivers) => {
+      const excluded = exclusions[giver.id] || [];
+      const validReceivers = participants.filter(p =>
+        p.id !== giver.id &&
+        !excluded.includes(p.id) &&
+        !visitedReceivers.has(p.id)
+      );
+
+      for (const receiver of validReceivers) {
+        visitedReceivers.add(receiver.id);
+        const assignedGiver = receiverToGiver.get(receiver.id);
+
+        if (!assignedGiver || findReceiver(assignedGiver, visitedReceivers)) {
+          receiverToGiver.set(receiver.id, giver.id);
+          return true;
         }
       }
-      
-      // Verificar condición de Hall: |N(S)| >= |S|
-      if (validReceivers.size < subset.length) {
+
+      return false;
+    };
+
+    for (const giver of participants) {
+      if (!findReceiver(giver, new Set())) {
         return false;
       }
     }
-    
+
     return true;
   };
 
