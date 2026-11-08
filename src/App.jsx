@@ -305,6 +305,26 @@ function App() {
     }
   };
 
+  const deleteParticipantWishes = (participantId) => {
+    const participant = participants.find(p => p.id === participantId);
+
+    showConfirm(
+      `¿Estás seguro de eliminar todos los deseos de ${participant?.name || 'este participante'}?`,
+      async () => {
+        try {
+          await remove(ref(database, `exchanges/${currentExchangeId}/wishes/${participantId}`));
+
+          const updatedWishes = { ...participantWishes };
+          delete updatedWishes[participantId];
+          setParticipantWishes(updatedWishes);
+          showMessage('Lista de deseos eliminada', 'success');
+        } catch (error) {
+          showMessage('Error al eliminar la lista de deseos: ' + error.message, 'error');
+        }
+      }
+    );
+  };
+
   const toggleExclusion = async (giverId, receiverId) => {
     const newExclusions = { ...exclusions };
     
@@ -1207,6 +1227,13 @@ function App() {
                                   style={{ width: '100%', marginTop: '15px' }}
                                 >
                                   🔗 Ver Lista Pública
+                                </button>
+                                <button
+                                  onClick={() => deleteParticipantWishes(participant.id)}
+                                  className="btn btn-danger"
+                                  style={{ width: '100%', marginTop: '10px' }}
+                                >
+                                  🗑️ Eliminar deseos
                                 </button>
                               </>
                             ) : (
