@@ -325,6 +325,21 @@ function App() {
     );
   };
 
+  const deleteAllWishes = () => {
+    showConfirm(
+      '¿Estás seguro de eliminar todas las listas de deseos de este intercambio?',
+      async () => {
+        try {
+          await remove(ref(database, `exchanges/${currentExchangeId}/wishes`));
+          setParticipantWishes({});
+          showMessage('Todas las listas de deseos fueron eliminadas', 'success');
+        } catch (error) {
+          showMessage('Error al eliminar todas las listas de deseos: ' + error.message, 'error');
+        }
+      }
+    );
+  };
+
   const toggleExclusion = async (giverId, receiverId) => {
     const newExclusions = { ...exclusions };
     
@@ -1178,6 +1193,15 @@ function App() {
                 <h2 style={{ textAlign: 'center', marginBottom: '20px', color: '#2c5f2d' }}>
                   📝 Listas de Deseos de Participantes 🎁
                 </h2>
+                <div className="actions-bar" style={{ marginBottom: '20px' }}>
+                  <button
+                    onClick={deleteAllWishes}
+                    className="btn btn-danger"
+                    disabled={Object.keys(participantWishes).length === 0}
+                  >
+                    🗑️ Limpiar todos los deseos
+                  </button>
+                </div>
                 
                 {participants.length === 0 ? (
                   <div className="message message-info">
